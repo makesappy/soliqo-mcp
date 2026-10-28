@@ -185,6 +185,21 @@ async def youtube_process(url: str, language: str = "") -> Dict[str, Any]:
 
 
 @mcp.tool()
+async def youtube_transcript(url: str) -> Dict[str, Any]:
+    """Get the raw transcript of a YouTube video, with no summary.
+
+    Returns {url, video_id, language_code, transcript, source} right away.
+    Uses the video's captions, so nothing is queued and no note is created.
+    Videos without captions return an error; use youtube_process for those.
+    Requires an active Soliqo subscription.
+    """
+    url = (url or "").strip()
+    if not url.startswith(("http://", "https://")):
+        raise RuntimeError("url must be an absolute http(s) YouTube URL")
+    return await _api_request("POST", "/api/youtube/transcript", json={"url": url})
+
+
+@mcp.tool()
 async def pdf_process(file_path: str, language: str = "") -> Dict[str, Any]:
     """Upload a PDF file and start summarization."""
     target = Path(file_path).expanduser().resolve()

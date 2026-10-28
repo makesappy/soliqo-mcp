@@ -20,6 +20,7 @@ Your MCP usage shares the same plan limits as your Soliqo app account.
 |---|---|
 | `audio_process_file` | Upload a local audio file (meeting, lecture, interview) for transcription and summarization |
 | `youtube_process` | Summarize a YouTube video by URL |
+| `youtube_transcript` | Get the raw transcript of a YouTube video, without a summary (videos with captions; subscribers) |
 | `podcast_process` | Summarize a podcast episode by URL |
 | `podcast_platforms` | List supported podcast platforms |
 
@@ -87,6 +88,7 @@ Use the same `command` / `args` / `env` values in your client's MCP server setti
 ## Example prompts
 
 - "Summarize this recording: ~/Downloads/standup.m4a"
+- "Get me just the transcript of https://www.youtube.com/watch?v=..."
 - "What notes did I create this week? Give me a short list."
 - "Show me the transcript of my latest meeting."
 - "Rewrite the summary of <note> as bullet points with owners and deadlines."
