@@ -107,6 +107,7 @@ async def _start_audio_upload(
     file_path: Path,
     language: Optional[str] = None,
     chunk_size_bytes: int = 5 * 1024 * 1024,
+    transcript_only: bool = False,
 ) -> Dict[str, Any]:
     file_path = file_path.expanduser().resolve()
     if not file_path.exists() or not file_path.is_file():
@@ -147,6 +148,8 @@ async def _start_audio_upload(
                 raise RuntimeError(f"Unexpected upload-chunk response for chunk {chunk_number}")
 
     complete_payload = {"upload_id": upload_id}
+    if transcript_only:
+        complete_payload["transcript_only"] = "true"
     completed = await _api_request(
         "POST",
         "/api/audio/upload/complete",
@@ -165,22 +168,33 @@ async def audio_process_file(
     file_path: str,
     language: str = "",
     chunk_size_mb: float = 5.0,
+    transcript_only: bool = False,
 ) -> Dict[str, Any]:
-    """Upload a local audio file through chunked backend API and start processing."""
+    """Upload a local audio file through chunked backend API and start processing.
+
+    transcript_only=True stops after transcription: the note completes with
+    the transcript and summary=null (no LLM summary is generated).
+    """
     chunk_size_bytes = int(chunk_size_mb * 1024 * 1024)
     return await _start_audio_upload(
         Path(file_path),
         language=language or None,
         chunk_size_bytes=max(chunk_size_bytes, 1),
+        transcript_only=transcript_only,
     )
 
 
 @mcp.tool()
-async def youtube_process(url: str, language: str = "") -> Dict[str, Any]:
-    """Submit a YouTube URL for summarization."""
-    payload: Dict[str, str] = {"url": url}
+async def youtube_process(url: str, language: str = "", transcript_only: bool = False) -> Dict[str, Any]:
+    """Submit a YouTube URL for summarization.
+
+    transcript_only=True returns a note with the transcript and summary=null.
+    """
+    payload: Dict[str, Any] = {"url": url}
     if language:
         payload["language"] = language
+    if transcript_only:
+        payload["transcript_only"] = True
     return await _api_request("POST", "/api/youtube/process", json=payload)
 
 
@@ -190,7 +204,8 @@ async def youtube_transcript(url: str) -> Dict[str, Any]:
 
     Returns {url, video_id, language_code, transcript, source} right away.
     Uses the video's captions, so nothing is queued and no note is created.
-    Videos without captions return an error; use youtube_process for those.
+    Videos without captions return an error; use
+    youtube_process(transcript_only=True) for those.
     Requires an active Soliqo subscription.
     """
     url = (url or "").strip()
@@ -200,14 +215,19 @@ async def youtube_transcript(url: str) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def pdf_process(file_path: str, language: str = "") -> Dict[str, Any]:
-    """Upload a PDF file and start summarization."""
+async def pdf_process(file_path: str, language: str = "", transcript_only: bool = False) -> Dict[str, Any]:
+    """Upload a PDF file and start summarization.
+
+    transcript_only=True keeps only the extracted text: summary=null.
+    """
     target = Path(file_path).expanduser().resolve()
     if not target.exists() or not target.is_file():
         raise RuntimeError(f"File does not exist: {target}")
 
     with target.open("rb") as fp:
         data = {"language": language} if language else {}
+        if transcript_only:
+            data["transcript_only"] = "true"
         return await _api_request(
             "POST",
             "/api/pdf/upload",
@@ -331,15 +351,20 @@ async def podcast_platforms() -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def podcast_process(url: str, language: str = "") -> Dict[str, Any]:
-    """Submit a podcast episode URL for summarization."""
+async def podcast_process(url: str, language: str = "", transcript_only: bool = False) -> Dict[str, Any]:
+    """Submit a podcast episode URL for summarization.
+
+    transcript_only=True returns a note with the transcript and summary=null.
+    """
     url = (url or "").strip()
     if not url.startswith(("http://", "https://")):
         raise RuntimeError("url must be an absolute http(s) URL")
-    payload: Dict[str, str] = {"url": url}
+    payload: Dict[str, Any] = {"url": url}
     language_value = _validate_language(language)
     if language_value:
         payload["language"] = language_value
+    if transcript_only:
+        payload["transcript_only"] = True
     return await _api_request("POST", "/api/podcasts/process", json=payload)
 
 

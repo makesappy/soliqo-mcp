@@ -22,7 +22,10 @@ Your MCP usage shares the same plan limits as your Soliqo app account.
 | `youtube_process` | Summarize a YouTube video by URL |
 | `youtube_transcript` | Get the raw transcript of a YouTube video, without a summary (videos with captions; subscribers) |
 | `podcast_process` | Summarize a podcast episode by URL |
+| `pdf_process` | Upload a PDF for summarization |
 | `podcast_platforms` | List supported podcast platforms |
+
+`audio_process_file`, `youtube_process`, `podcast_process` and `pdf_process` accept `transcript_only` (default `false`). With `transcript_only=true` the note completes with the transcript only: no summary is generated and `summary` is `null`. Useful when another tool or prompt processes the raw text. Example: `audio_process_file(file_path="~/Downloads/standup.m4a", transcript_only=true)`, then `note_get_transcription(task_id)`.
 
 **Work with your notes**
 
@@ -35,7 +38,6 @@ Your MCP usage shares the same plan limits as your Soliqo app account.
 | `note_edit_summary` | Edit a note's summary with a natural-language instruction (e.g. "make it shorter and add action items") |
 | `note_reset_summary` | Restore the original AI-generated summary, discarding manual edits |
 | `note_translate` | Translate a note's summary (en, uk, ru, cs, es, de, fr) |
-| `pdf_process` | Upload a PDF for summarization |
 
 **Task management**
 
